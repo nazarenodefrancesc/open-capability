@@ -22,9 +22,12 @@ OpenCapability is influenced by [WikiSkill](https://arxiv.org/abs/2608.27454), w
 
 A compact way to think about it is:
 
-```text
-Collect traces, feedback, errors and successes → turn recurring patterns into persistent knowledge → identify what the agent still cannot do reliably → change the right asset → verify the improvement → make the capability available at runtime
-```
+1. **Collect traces, feedback, errors and successes.**
+2. **Turn recurring patterns into persistent knowledge.**
+3. **Identify what the agent still cannot do reliably.**
+4. **Change the right asset.**
+5. **Verify the improvement.**
+6. **Make the capability available at runtime.**
 
 - **WikiSkill** is mostly about learning from the agent's own experience.
 - **OpenSkill** is mostly about learning from the external world.
