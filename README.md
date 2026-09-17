@@ -24,15 +24,14 @@ OpenCapability is influenced by [WikiSkill](https://arxiv.org/abs/2608.27454), w
 - **OpenSkill** is mostly about learning from the external world.
 - **OpenCapability** is about deciding what should improve, changing the right asset, and verifying the result.
 
-
 A compact way to think about it is:
 
-1. **Collect traces, feedback, errors and successes.**
-2. **Turn recurring patterns into persistent knowledge.**
-3. **Identify what the agent still cannot do reliably.**
-4. **Change the right asset.**
-5. **Verify the improvement.**
-6. **Make the capability available at runtime.**
+1. **Runtime Agent → Experience Log:** collect traces, feedback, errors and successes from real runs.
+2. **Self-maintenance → Agent Wiki:** turn recurring patterns into persistent knowledge.
+3. **Self-maintenance → Capability Queue:** identify what the agent still cannot do reliably and queue it for deeper analysis.
+4. **Dreams Phase → Assets:** decide what should change and update the right asset: skill, memory, retrieval, tooling, policy, or documentation.
+5. **Verifier → Promotion Gate:** test whether the change actually improves the capability.
+6. **Capability Registry → Runtime Agent:** promote verified capabilities and make them available for future tasks.
 
 ## How the loop works
 
