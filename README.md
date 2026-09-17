@@ -37,7 +37,7 @@ Normal task execution, lightweight maintenance, and deeper capability evolution 
 ```mermaid
 flowchart LR
 
-    T([New Task]) --> R[Runtime]
+    T([New Task]) --> R[Runtime Agent]
     R --> O[Result]
     R --> E[(Experience Log)]
 
@@ -60,11 +60,42 @@ flowchart LR
 
 The three entry points are intentionally separate:
 
-- a **new task** starts normal runtime execution;
+- a **new task** starts normal execution by the runtime agent;
 - a **maintenance job** reviews recent experience and keeps the knowledge base healthy;
 - a **Dreams job** performs the slower, more expensive work of evolving capabilities.
 
-Runtime uses capabilities already marked as active in the Capability Registry. Failed or blocked attempts are not treated as wasted work: the candidate can go back to the queue, while useful evidence remains in the Agent Wiki.
+The runtime agent uses capabilities already marked as active in the Capability Registry. Failed or blocked attempts are not wasted work: the candidate can go back to the queue, while useful evidence remains in the Agent Wiki.
+
+## Minimal implementation
+
+OpenCapability does not require a large platform. A first implementation can be little more than a few versioned files:
+
+```text
+open-capability/
+├── capabilities/
+│   ├── index.yaml
+│   └── <capability>.yaml
+├── queue.yaml
+├── agent-wiki/
+├── skills/
+├── failure-log/
+└── eval-log/
+```
+
+The exact storage is not important. These can be Markdown files, YAML, a database, issue trackers, or existing agent memory systems. What matters is keeping the responsibilities separate.
+
+## A few design rules
+
+1. **Capability first, asset second.** Decide what should improve before deciding how to implement it.
+2. **Experience is not knowledge.** Consolidate before generalizing.
+3. **Knowledge is not instruction.** A wiki observation can stay descriptive until there is enough evidence to operationalize it.
+4. **Skills are optional.** Memory, retrieval, tooling, documentation, or policy may be the real fix.
+5. **Verification is independent.** Builder confidence is not evidence.
+6. **Promotion is explicit.** The runtime agent should rely only on capabilities that have earned runtime eligibility.
+7. **Failed attempts still teach.** Keep useful evidence even when an implementation is rejected.
+8. **Prefer small, reversible changes.** Self-improvement should be inspectable and easy to roll back.
+9. **Preserve provenance.** A capability should be traceable back to evidence, assets, and evals.
+10. **Separate maintenance from evolution.** Frequent jobs consolidate; slower jobs redesign and promote.
 
 ## The pieces
 
@@ -245,37 +276,6 @@ A small failure taxonomy helps avoid the default reaction of "make another skill
 | `overfitting_gap` | Narrower scope, revert, broader evals |
 | `duplication_gap` | Reuse, merge or deprecate existing assets |
 | `staleness_gap` | Refresh or deprecate knowledge |
-
-## Minimal implementation
-
-OpenCapability does not require a large platform. A first implementation can be little more than a few versioned files:
-
-```text
-open-capability/
-├── capabilities/
-│   ├── index.yaml
-│   └── <capability>.yaml
-├── queue.yaml
-├── agent-wiki/
-├── skills/
-├── failure-log/
-└── eval-log/
-```
-
-The exact storage is not important. These can be Markdown files, YAML, a database, issue trackers, or existing agent memory systems. What matters is keeping the responsibilities separate.
-
-## A few design rules
-
-1. **Capability first, asset second.** Decide what should improve before deciding how to implement it.
-2. **Experience is not knowledge.** Consolidate before generalizing.
-3. **Knowledge is not instruction.** A wiki observation can stay descriptive until there is enough evidence to operationalize it.
-4. **Skills are optional.** Memory, retrieval, tooling, documentation, or policy may be the real fix.
-5. **Verification is independent.** Builder confidence is not evidence.
-6. **Promotion is explicit.** Runtime should rely only on capabilities that have earned runtime eligibility.
-7. **Failed attempts still teach.** Keep useful evidence even when an implementation is rejected.
-8. **Prefer small, reversible changes.** Self-improvement should be inspectable and easy to roll back.
-9. **Preserve provenance.** A capability should be traceable back to evidence, assets, and evals.
-10. **Separate maintenance from evolution.** Frequent jobs consolidate; slower jobs redesign and promote.
 
 ## Relationship to WikiSkill and OpenSkill
 
