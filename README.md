@@ -2,166 +2,154 @@
 
 **From experience to verified agent capabilities.**
 
-OpenCapability is a lightweight framework for evolving AI agents over time in a controlled, inspectable and verifiable way.
+OpenCapability is a lightweight framework for agents that need to improve over time without turning every lesson into a new skill.
 
-The core idea is simple:
+The idea is simple: an agent should improve **capabilities**, not just accumulate instructions.
 
-> An agent should not improve only by creating more skills. It should improve **observable capabilities**, using the right assets and proving that the improvement is real.
+A capability is something the system can reliably do from the outside: retrieve the right project context, perform grounded research, follow a stable coding workflow, remember durable preferences, recover from known failure modes, and so on.
 
-OpenCapability treats skills as one implementation asset among many. A capability may be backed by skills, memory, a wiki, retrieval/routing, documentation, tools, runtime policies, tests, or a combination of them.
+A skill may help implement a capability, but it is only one possible asset. The actual fix might be a better memory entry, a wiki page, a routing rule, a tool check, a prompt template, a test, or a change in runtime policy.
 
-The framework is inspired by the separation introduced by [WikiSkill](https://arxiv.org/abs/2608.27454) between raw experience, persistent knowledge and executable skills, and by [OpenSkill](https://arxiv.org/abs/2606.06741), which acquires grounded knowledge and verification anchors from open-world resources.
+So the basic question is not:
 
-OpenCapability generalizes these ideas around a higher-level question:
+> What skill should the agent create?
 
-> **What capability should improve, which assets should change, and what evidence is sufficient to promote the improvement?**
+It is:
 
-## Core model
+> **What capability should improve, what needs to change to improve it, and how do we know the change actually worked?**
+
+OpenCapability is influenced by [WikiSkill](https://arxiv.org/abs/2608.27454), which separates raw experience from persistent knowledge and executable skills, and by [OpenSkill](https://arxiv.org/abs/2606.06741), which acquires grounded knowledge and verification anchors from open-world resources.
+
+A compact way to think about it is:
 
 ```text
-Experience → Knowledge → Capability gap → Asset change → Verification → Active capability
+Experience → Knowledge → Capability gap → Asset change → Verification → Capability
 ```
 
-A useful mental model is:
+- **WikiSkill** is mostly about learning from the agent's own experience.
+- **OpenSkill** is mostly about learning from the external world.
+- **OpenCapability** is about deciding what should improve, changing the right asset, and verifying the result.
 
-- **WikiSkill:** learn from the agent's own experience.
-- **OpenSkill:** learn from the external world.
-- **OpenCapability:** decide what capability to improve, through which assets, and verify the result.
+## How the loop works
 
-## Logical architecture
+Normal task execution, lightweight maintenance, and deeper capability evolution run on different cadences.
 
 ```mermaid
-flowchart TD
-    E[Experience<br/>trajectories · conversations · errors · successes · feedback] --> W[Agent Wiki<br/>persistent experiential knowledge]
-    W --> C[Capability Layer<br/>registry · queue · lifecycle · gaps]
-    C --> A[Asset Layer<br/>skills · memory · retrieval · docs · tools · policy]
-    A --> V[Verification Layer<br/>anchors · verifier · tests · regression probes]
-    V --> P{Promotion gate}
-    P -->|PASS| AC[Active Capability]
-    P -->|FAIL / BLOCKED| R[Candidate / Blocked / Rejected]
-    AC --> E
-    R --> W
+flowchart LR
 
-    OW[Open-world resources<br/>docs · repositories · web] --> C
-    OW --> A
+    T([New Task]) --> R[Runtime]
+    R --> O[Result]
+    R --> E[(Experience Log)]
+
+    MJ([Maintenance Job]) --> M[Self-maintenance]
+    E --> M
+    M --> W[(Agent Wiki)]
+    M --> Q[(Capability Queue)]
+
+    DJ([Dreams Job]) --> D[Dreams Phase]
+    W --> D
+    Q --> D
+
+    D --> B[Update Assets]
+    B --> V[Verifier]
+    V --> G{Promotion Gate}
+
+    G -->|PASS| C[(Capability Registry)]
+    G -->|FAIL / BLOCKED| F[Re-queue candidate<br/>retain knowledge]
 ```
 
-## The five layers
+The three entry points are intentionally separate:
 
-### 1. Experience
+- a **new task** starts normal runtime execution;
+- a **maintenance job** reviews recent experience and keeps the knowledge base healthy;
+- a **Dreams job** performs the slower, more expensive work of evolving capabilities.
 
-Raw evidence produced while the agent works:
+Runtime uses capabilities already marked as active in the Capability Registry. Failed or blocked attempts are not treated as wasted work: the candidate can go back to the queue, while useful evidence remains in the Agent Wiki.
 
-- trajectories;
-- conversations;
-- tool results;
-- errors and recoveries;
-- successes;
-- user feedback;
-- evaluation results.
+## The pieces
 
-Raw experience should remain inspectable and should not be confused with durable knowledge.
+### Experience
 
-### 2. Knowledge: the Agent Wiki
+Experience is the raw record of what happened while the agent was working: trajectories, conversations, tool calls, errors, recoveries, successful outcomes, user feedback, and evaluation results.
 
-The wiki is the persistent knowledge layer between raw experience and executable behavior.
+It is evidence, not yet knowledge.
 
-It can contain:
+Keeping this distinction matters. A single bad run should not immediately become a permanent rule.
 
-- observations;
-- recurring patterns;
-- failure modes;
-- root causes;
-- successful strategies;
-- counterexamples;
-- preferences and conventions;
-- evidence and provenance;
-- previous failed improvement attempts.
+### Agent Wiki
 
-The wiki answers:
+The Agent Wiki is persistent experiential knowledge: what the system has learned across runs.
 
-> **What has the agent learned?**
+It can contain recurring patterns, failure modes, root causes, successful strategies, counterexamples, preferences, provenance, and previous improvement attempts.
 
-It should not automatically turn every observation into an instruction.
+A useful rule is:
 
-### 3. Capability
+> **The wiki stores what the agent has learned. Skills store behavior the agent has decided to operationalize.**
 
-A **capability** is an observable ability of the system.
+That separation lets knowledge accumulate before it is turned into procedure. It also means a failed skill patch does not erase the underlying lesson.
 
-Examples:
+### Capability Queue
 
-- retrieve the right project context;
-- perform grounded research;
-- develop code through reliable TDD loops;
-- maintain coherent long-term memory;
-- produce a stable user-requested output format;
-- detect when required tooling is unavailable;
-- recover from recurring operational failures.
+The queue is the intake for things that may deserve improvement.
 
-A capability is not the same thing as a skill.
+Typical entries are observations such as:
 
-A single capability may depend on multiple assets, and many capabilities may require no dedicated skill at all.
+- the agent repeatedly misses the right project context;
+- the same formatting correction appears across several sessions;
+- a tool is available but often used incorrectly;
+- a coding workflow works only when a particular sequence is followed;
+- retrieval succeeds for one phrasing but fails for equivalent queries.
 
-### 4. Assets
+Not every queue item needs to become a formal capability. The Dreams phase can merge, defer, reject, or reclassify them.
 
-An asset is anything that helps implement a capability.
+### Assets
 
-Typical assets include:
+Assets are the things that actually implement behavior.
+
+Examples include:
 
 - skills;
 - memory;
-- wiki pages;
-- retrieval indexes;
-- routing rules;
-- documentation;
+- retrieval indexes and routing rules;
 - prompt templates;
-- scripts;
-- tools;
+- scripts and tools;
+- documentation;
 - runtime policies;
-- examples;
-- checklists;
+- examples and checklists;
 - test suites.
 
-The important rule is:
+The important part is diagnosing the gap before choosing the asset.
 
-> **Do not create a skill when the real problem is knowledge, retrieval, tooling or verification.**
+If the problem is retrieval, adding another skill may make the system worse. If the problem is missing knowledge, the right answer may simply be to improve the wiki. If the problem is runtime capability, documentation alone will not fix it.
 
-### 5. Verification
+### Verification
 
-An improvement is not promoted because the builder believes it is better.
+An improvement is not promoted because the builder thinks it looks better.
 
-It needs independent evidence.
+It needs evidence.
 
-A **verification anchor** can be:
+A verification anchor can be an automated test, a build command, a retrieval probe, an invariant, a checklist, an authoritative source, an expected input/output example, or a structured manual review.
 
-- an automated test;
-- a build command;
-- a retrieval probe;
-- an invariant;
-- a checklist;
-- an authoritative source;
-- an expected input/output pair;
-- a regression probe;
-- a structured manual review.
+The builder changes the system. The verifier checks the change.
 
-The builder modifies. The verifier checks.
+That separation does not require a different model, but it does require a different role and independent evidence.
 
 ## Capability Registry
 
-The Capability Registry is **not** another knowledge base and it is **not** a skill store.
+The Capability Registry is the small control plane that ties the system together.
 
-It is the system's **capability control plane**: a versioned catalog of observable capabilities, their lifecycle state, supporting assets, knowledge provenance, verification evidence, known failure modes and runtime eligibility.
+It is **not** another knowledge base and it is **not** a skill store. It is a versioned catalog of capabilities the system has qualified, together with the assets that support them and the evidence that justifies their current state.
 
-The registry answers questions such as:
+It should answer questions such as:
 
 - What can the system currently do reliably?
-- Which capabilities are still candidate or degraded?
+- Which capabilities are candidates, active, degraded, blocked, or deprecated?
 - Which assets implement a capability?
-- Which evidence justified its promotion?
-- Which failure modes are known?
-- Which capability should be revisited by maintenance or deeper evolution?
+- Which wiki knowledge led to the current implementation?
+- What verification allowed it to become active?
+- What failure modes are already known?
 
-Example:
+A capability entry can stay small:
 
 ```yaml
 id: cap.reliable_tdd_development
@@ -184,13 +172,11 @@ knowledge_basis:
   - wiki://coding/unverified-fixes
 
 verification:
+  last_result: PASS
   anchors:
     - test fails before implementation
     - targeted test passes after implementation
     - regression suite passes
-  last_result:
-    verdict: PASS
-    eval_id: eval-017
 
 known_failure_modes:
   - implementation_before_red
@@ -201,122 +187,68 @@ runtime_eligible: true
 version: 4
 ```
 
-The registry stores **references**, not duplicated knowledge or procedures.
+The registry stores references and state. It should not duplicate the contents of the wiki or the procedures inside a skill.
 
-## Capability lifecycle
-
-A capability can move through explicit states:
+A minimal lifecycle is enough for most implementations:
 
 ```text
-observed
-→ queued
-→ documented
-→ candidate
-→ retrieval_verified / sandbox_verified
-→ skill_backed (optional)
-→ active
-→ active_watchpoint
-→ degraded
-→ blocked
-→ deprecated
+observed → queued → candidate → active → degraded / deprecated
+                    ↘ blocked
 ```
 
-Not every capability must become skill-backed. A capability can become active through memory, routing, documentation, tooling or policy changes alone.
+Verification method is metadata, not a lifecycle state. Likewise, `skill-backed` describes how a capability is implemented, not where it sits in the lifecycle.
 
-## Runtime, Self-maintenance and Dreams
+## Self-maintenance vs Dreams
 
-OpenCapability separates normal task execution from lightweight maintenance and deeper evolution.
-
-```mermaid
-flowchart LR
-
-    T([New Task]) --> R[Runtime]
-    R --> O[Result]
-    R --> E[(Experience Log)]
-
-    MJ([Maintenance Job]) --> M[Self-maintenance]
-    E --> M
-    M --> W[(Agent Wiki)]
-    M --> Q[(Capability Queue)]
-
-    DJ([Dreams Job]) --> D[Dreams Phase]
-    W --> D
-    Q --> D
-
-    D --> B[Update Assets]
-    B --> V[Verifier]
-    V --> G{Promotion Gate}
-
-    G -->|PASS| A[(Active Capability Registry)]
-    G -->|FAIL / BLOCKED| F[Re-queue candidate<br/>retain knowledge]
-```
-
-Runtime uses capabilities already present in the Active Capability Registry. Failed or blocked candidates are returned to the Capability Queue, while accumulated knowledge remains in the Agent Wiki.
-
-### Runtime
-
-Runtime should prioritize task completion and use already active capabilities.
-
-It should not perform heavy redesign. It mainly produces new evidence.
+These two loops have different jobs.
 
 ### Self-maintenance
 
-Self-maintenance is the lightweight loop:
+Self-maintenance is the frequent, lightweight pass over recent activity.
+
+Its job is mostly to:
 
 ```text
-detect → classify → micro-fix → consolidate → queue
+detect → classify → consolidate → micro-fix → queue
 ```
 
-Typical responsibilities:
+It reads recent trajectories and failures, updates the wiki, performs small low-risk fixes, and adds stronger signals to the Capability Queue.
 
-- read recent trajectories and failures;
-- detect recurring patterns;
-- classify the gap;
-- perform small, low-risk fixes;
-- update the Agent Wiki;
-- add stronger signals to the OpenCapability Queue.
-
-It should normally **not** promote major new capabilities.
+It should normally not redesign major parts of the system or promote large new capabilities.
 
 ### Dreams phase
 
-The Dreams phase is the deeper evolution loop:
+Dreams is the slower evolution loop.
+
+Its job is closer to:
 
 ```text
-pattern mining → capability design → asset update → verifier → promotion gate
+pattern mining → capability selection → asset update → verification → promotion
 ```
 
-Typical responsibilities:
+It looks across sessions, groups related signals, chooses a small number of high-leverage candidates, decides which assets need to change, runs a builder, and sends the result through an independent verifier and promotion gate.
 
-- analyze cross-session evidence;
-- group recurring patterns into capability gaps;
-- select a small number of high-leverage candidates;
-- decide which assets should change;
-- build or patch assets;
-- run independent verification;
-- promote, defer, block or reject.
+If a candidate fails, the implementation can be rejected while the knowledge that motivated it remains useful.
 
-A rejected skill patch does not imply that the underlying knowledge is wrong. The wiki can retain the knowledge and the failed attempt as evidence for future iterations.
+## Diagnose before you patch
 
-## Failure classification
-
-Before changing an asset, classify the failure.
+A small failure taxonomy helps avoid the default reaction of "make another skill".
 
 | Gap | Typical response |
 |---|---|
 | `knowledge_gap` | Wiki, memory, documentation |
-| `retrieval_gap` | Index, routing, tags, hub pages, query probes |
+| `retrieval_gap` | Index, routing, tags, query probes |
 | `procedure_gap` | Skill, checklist, prompt procedure |
-| `format_gap` | Template, skill patch, output contract |
-| `runtime_gap` | Tool checks, fallback, blocked state, guardrail |
+| `format_gap` | Template, output contract, focused skill patch |
+| `runtime_gap` | Tool checks, fallback behavior, blocked state |
 | `verification_gap` | Better anchors, tests, reviewer protocol |
-| `overfitting_gap` | Narrow scope, revert, broader evals |
-| `duplication_gap` | Merge, reuse or deprecate assets |
+| `overfitting_gap` | Narrower scope, revert, broader evals |
+| `duplication_gap` | Reuse, merge or deprecate existing assets |
 | `staleness_gap` | Refresh or deprecate knowledge |
 
-## Minimal data model
+## Minimal implementation
 
-A practical implementation can start with only a few persistent objects:
+OpenCapability does not require a large platform. A first implementation can be little more than a few versioned files:
 
 ```text
 open-capability/
@@ -330,46 +262,44 @@ open-capability/
 └── eval-log/
 ```
 
-This is intentionally small. OpenCapability is a framework for organizing evolution, not a requirement to introduce a large orchestration platform.
+The exact storage is not important. These can be Markdown files, YAML, a database, issue trackers, or existing agent memory systems. What matters is keeping the responsibilities separate.
 
-## Design principles
+## A few design rules
 
-1. **Capability first, asset second.** Diagnose what should improve before deciding to create a skill.
-2. **Experience is not knowledge.** Consolidate before operationalizing.
-3. **Knowledge is not instruction.** A wiki observation may remain descriptive for a long time.
-4. **Skills are optional assets.** Not every improvement should become a skill.
+1. **Capability first, asset second.** Decide what should improve before deciding how to implement it.
+2. **Experience is not knowledge.** Consolidate before generalizing.
+3. **Knowledge is not instruction.** A wiki observation can stay descriptive until there is enough evidence to operationalize it.
+4. **Skills are optional.** Memory, retrieval, tooling, documentation, or policy may be the real fix.
 5. **Verification is independent.** Builder confidence is not evidence.
-6. **Promotion is explicit.** Runtime should use only capabilities that are eligible for runtime use.
-7. **Failed implementations still teach.** Keep useful knowledge even when a patch is rejected.
-8. **Prefer small, reversible changes.** Avoid theatrical self-improvement.
-9. **Preserve provenance.** A capability should be traceable back to assets, evidence and evals.
-10. **Separate lightweight maintenance from deep evolution.** Frequent jobs consolidate; slower jobs redesign and promote.
+6. **Promotion is explicit.** Runtime should rely only on capabilities that have earned runtime eligibility.
+7. **Failed attempts still teach.** Keep useful evidence even when an implementation is rejected.
+8. **Prefer small, reversible changes.** Self-improvement should be inspectable and easy to roll back.
+9. **Preserve provenance.** A capability should be traceable back to evidence, assets, and evals.
+10. **Separate maintenance from evolution.** Frequent jobs consolidate; slower jobs redesign and promote.
 
 ## Relationship to WikiSkill and OpenSkill
 
-OpenCapability is an independent conceptual framework. It is not an implementation of WikiSkill or OpenSkill.
+OpenCapability is not an implementation of either paper.
 
-It borrows two useful ideas:
+It borrows a useful separation from **WikiSkill**: raw experience should first become persistent knowledge, and that knowledge should survive individual skill changes.
 
-- **WikiSkill** shows the value of a persistent knowledge layer that separates raw experience from executable skills and lets knowledge survive individual skill updates.
-- **OpenSkill** shows how open-world resources can provide both grounded knowledge and verification anchors when the system does not already possess them.
+It borrows a complementary idea from **OpenSkill**: when the agent does not already know enough, external resources can provide grounded knowledge and independent verification anchors.
 
-OpenCapability places these mechanisms inside a more general capability lifecycle where the resulting change may target a skill, memory, retrieval, documentation, policy, tooling or another asset.
+OpenCapability puts those ideas inside a broader lifecycle where the thing being improved is a capability, and the resulting change may target a skill, memory, retrieval, tooling, documentation, or policy.
 
 ## Status
 
 **Early specification / v0.1.**
 
-The current goal is to keep the framework small enough to reason about and concrete enough to implement in real agents.
+The goal for now is to keep the framework small enough to reason about and concrete enough to implement in real agents.
 
-Next useful steps include:
+Likely next steps:
 
-- a formal Capability Registry schema;
-- a minimal reference implementation;
-- runtime capability routing;
-- maintenance and Dreams job templates;
-- eval and promotion-gate examples;
-- integration experiments with persistent agent wikis and skill systems.
+- formalize the Capability Registry schema;
+- build a minimal reference implementation;
+- define maintenance and Dreams job templates;
+- add concrete verifier and promotion-gate examples;
+- test the loop with a persistent Agent Wiki and a real skill system.
 
 ## References
 
