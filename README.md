@@ -23,7 +23,7 @@ OpenCapability is influenced by [WikiSkill](https://arxiv.org/abs/2608.27454), w
 A compact way to think about it is:
 
 ```text
-Experience → Knowledge → Capability gap → Asset change → Verification → Capability
+Collect traces, feedback, errors and successes → turn recurring patterns into persistent knowledge → identify what the agent still cannot do reliably → change the right asset → verify the improvement → make the capability available at runtime
 ```
 
 - **WikiSkill** is mostly about learning from the agent's own experience.
