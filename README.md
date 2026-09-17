@@ -20,6 +20,11 @@ It is:
 
 OpenCapability is influenced by [WikiSkill](https://arxiv.org/abs/2608.27454), which separates raw experience from persistent knowledge and executable skills, and by [OpenSkill](https://arxiv.org/abs/2606.06741), which acquires grounded knowledge and verification anchors from open-world resources.
 
+- **WikiSkill** is mostly about learning from the agent's own experience.
+- **OpenSkill** is mostly about learning from the external world.
+- **OpenCapability** is about deciding what should improve, changing the right asset, and verifying the result.
+
+
 A compact way to think about it is:
 
 1. **Collect traces, feedback, errors and successes.**
@@ -28,10 +33,6 @@ A compact way to think about it is:
 4. **Change the right asset.**
 5. **Verify the improvement.**
 6. **Make the capability available at runtime.**
-
-- **WikiSkill** is mostly about learning from the agent's own experience.
-- **OpenSkill** is mostly about learning from the external world.
-- **OpenCapability** is about deciding what should improve, changing the right asset, and verifying the result.
 
 ## How the loop works
 
