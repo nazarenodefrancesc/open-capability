@@ -229,30 +229,29 @@ OpenCapability separates normal task execution from lightweight maintenance and 
 
 ```mermaid
 flowchart LR
-    U[User / Task] --> H[Runtime agent]
-    H --> ACT[Use active capabilities]
-    ACT --> OUT[Response / Action]
-    OUT --> EXP[New experience]
 
-    EXP --> SM[Self-maintenance]
-    SM --> DET[Detect patterns]
-    DET --> CLS[Classify gap]
-    CLS --> MF[Safe micro-fixes]
-    MF --> W[Update Agent Wiki]
-    W --> Q[Update OpenCapability Queue]
+    T([New Task]) --> R[Runtime]
+    R --> O[Result]
+    R --> E[(Experience Log)]
 
-    Q --> D[Dreams phase]
-    D --> PC[Cluster patterns into capabilities]
-    PC --> SEL[Select high-leverage candidates]
-    SEL --> AS[Choose assets to modify]
-    AS --> B[Builder]
-    B --> VER[Independent verifier]
-    VER --> G{Promotion gate}
-    G -->|PASS| REG[Capability Registry]
-    REG --> ACT
-    G -->|FAIL / BLOCKED| KEEP[Keep knowledge + candidate state]
-    KEEP --> W
+    MJ([Maintenance Job]) --> M[Self-maintenance]
+    E --> M
+    M --> W[(Agent Wiki)]
+    M --> Q[(Capability Queue)]
+
+    DJ([Dreams Job]) --> D[Dreams Phase]
+    W --> D
+    Q --> D
+
+    D --> B[Update Assets]
+    B --> V[Verifier]
+    V --> G{Promotion Gate}
+
+    G -->|PASS| A[(Active Capability Registry)]
+    G -->|FAIL / BLOCKED| F[Re-queue candidate<br/>retain knowledge]
 ```
+
+Runtime uses capabilities already present in the Active Capability Registry. Failed or blocked candidates are returned to the Capability Queue, while accumulated knowledge remains in the Agent Wiki.
 
 ### Runtime
 
